@@ -6,6 +6,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/go-acme/lego v2.7.2+incompatible
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/mux v1.8.1
 	github.com/minio/minio-go/v7 v7.0.93
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
