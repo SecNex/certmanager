@@ -1,12 +1,20 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
 )
+
+type UserClaims struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+	Scope string `json:"scope"`
+}
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +52,22 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+
+		claims, ok := parsedToken.Claims.(jwt.MapClaims)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userClaims := UserClaims{
+			ID:    claims["id"].(string),
+			Email: claims["email"].(string),
+			Role:  claims["role"].(string),
+			Scope: claims["scope"].(string),
+		}
+
+		ctx := context.WithValue(r.Context(), "userClaims", userClaims)
+		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})
