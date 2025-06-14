@@ -323,14 +323,6 @@ The application includes built-in health check endpoints:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
-
-For support and questions:
-
-- Create an issue on GitHub
-- Check the documentation
-- Review the example code in `.example/`
-
 ## 🔄 Changelog
 
 ### v0.1.0
