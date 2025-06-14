@@ -8,9 +8,10 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/secnex/auth/middlewares/auth"
+	"github.com/secnex/auth/middlewares/logger"
 	"github.com/secnex/certmanager/database"
 	"github.com/secnex/certmanager/manager"
-	"github.com/secnex/certmanager/middleware"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -39,20 +40,13 @@ func (s *ApiServer) Healthz(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func (s *ApiServer) Test(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("This is a test!"))
-}
-
 func (s *ApiServer) setupRoutes() {
 	// Public routes (no authentication required)
 	s.Router.HandleFunc("/healthz", s.Healthz).Methods(http.MethodGet)
 
 	// Protected routes (authentication required)
 	protected := s.Router.PathPrefix("/").Subrouter()
-	protected.Use(middleware.AuthMiddleware)
-
-	protected.HandleFunc("/test", s.Test).Methods(http.MethodGet)
+	protected.Use(auth.AuthMiddleware)
 }
 
 func (s *ApiServer) Start() {
@@ -79,7 +73,7 @@ func (s *ApiServer) Start() {
 	s.setupRoutes()
 
 	// Apply logging middleware to all routes
-	handler := middleware.LogHTTPRequest(s.Router)
+	handler := logger.LogHTTPRequest(s.Router)
 
 	if https {
 		s.StartHTTPS(handler, addr, domain)
