@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/secnex/certmanager/database"
-	"github.com/secnex/certmanager/logger"
 	"github.com/secnex/certmanager/manager"
+	"github.com/secnex/certmanager/middleware"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -39,6 +39,22 @@ func (s *ApiServer) Healthz(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
+func (s *ApiServer) Test(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("This is a test!"))
+}
+
+func (s *ApiServer) setupRoutes() {
+	// Public routes (no authentication required)
+	s.Router.HandleFunc("/healthz", s.Healthz).Methods(http.MethodGet)
+
+	// Protected routes (authentication required)
+	protected := s.Router.PathPrefix("/").Subrouter()
+	protected.Use(middleware.AuthMiddleware)
+
+	protected.HandleFunc("/test", s.Test).Methods(http.MethodGet)
+}
+
 func (s *ApiServer) Start() {
 	https := true
 
@@ -59,14 +75,17 @@ func (s *ApiServer) Start() {
 
 	log.Printf("Starting api server on %s...", addr)
 
-	s.Router.HandleFunc("/healthz", s.Healthz).Methods(http.MethodGet)
+	// Setup routes with selective authentication
+	s.setupRoutes()
+
+	// Apply logging middleware to all routes
+	handler := middleware.LogHTTPRequest(s.Router)
 
 	if https {
-		s.StartHTTPS(logger.LogHTTPRequest(s.Router), addr, domain)
+		s.StartHTTPS(handler, addr, domain)
 	} else {
-		s.StartHTTP(logger.LogHTTPRequest(s.Router))
+		s.StartHTTP(handler)
 	}
-
 }
 
 func (s *ApiServer) StartHTTP(handler http.Handler) {
